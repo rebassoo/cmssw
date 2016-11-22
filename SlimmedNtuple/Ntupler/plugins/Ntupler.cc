@@ -206,6 +206,7 @@ Ntupler::Ntupler(const edm::ParameterSet& iConfig)
   tree_->Branch("fvertex_y",fvertex_y_,"fvertex_y/i");
   tree_->Branch("fvertex_z",fvertex_z_,"fvertex_z/i");
   tree_->Branch("fvertex_chi2ndof",fvertex_chi2ndof_,"fvertex_chi2ndof/f");
+  tree_->Branch("fvertex_ntracks",fvertex_ntracks_,"fvertex_ntracks/i");
   tree_->Branch("fvertex_tkdist",&fvertex_tkdist_);
   tree_->Branch("fvertex_tkpt",&fvertex_tkpt_);
   tree_->Branch("fvertex_tketa",&fvertex_tketa_);
@@ -276,10 +277,10 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
    using namespace std;
-   if(iEvent.id().event()==883153054||iEvent.id().event()==814088551){
-     cout<<"iEvent.id().run()"<<iEvent.id().run()<<endl;
-     cout<<"iEvent.id().luminosityBlock"<<iEvent.luminosityBlock()<<endl;
-     cout<<"iEvent.id().event()"<<iEvent.id().event()<<endl;
+   //if(iEvent.id().event()==883153054||iEvent.id().event()==814088551){
+     //cout<<"iEvent.id().run()"<<iEvent.id().run()<<endl;
+     //cout<<"iEvent.id().luminosityBlock"<<iEvent.luminosityBlock()<<endl;
+     //cout<<"iEvent.id().event()"<<iEvent.id().event()<<endl;
 
      bool passTrigger=false;
      edm::Handle<TriggerResults> hltResults;
@@ -291,9 +292,6 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	 //cout<<"Trigger_name: "<<trigNames.triggerName(i)<<endl;
 	 //cout<<"Trigger decision: "<<hltResults->accept(i)<<endl;
        }
-       //(*trigger_prescaleValue_).push_back(hltConfig_.prescaleValue(iEvent,iSetup,trigNames.triggerName(i)));
-       //(*trigger_name_).push_back(trigNames.triggerName(i));
-       //(*trigger_decision_).push_back(hltResults->accept(i));
      }
  
      if(passTrigger){
@@ -303,59 +301,9 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        tr[3] = false;
        tr[102] = false;
        tr[103] = false;
-       // init counters        
-       //unsigned int N=0;
-       //unsigned int N_L_any=0, N_L_one=0, N_L_two=0;
-       //unsigned int N_R_any=0, N_R_one=0, N_R_two=0;
-       //unsigned int N_LR=0;
-
-       // before looping                                                                  
-       //printf("run, event, 45-F, 45-N, 56-N, 56-F\n");
        Handle< edm::DetSetVector<TotemRPLocalTrack> > tracks;     
        iEvent.getByLabel("totemRPLocalTrackFitter",tracks);
-
-       cout<<"I get here 0:"<<endl;
-       for (const auto &ds : *tracks)
-	 {
-	   cout<<"I get here 1:"<<endl;
-	   for (const auto &t : ds)
-	     {
-	       cout<<"I get here 2:"<<endl;
-	       if (t.isValid())
-		 {
-		   cout<<"I get here 3:"<<endl;
-		   tr[ds.detId()] = true;
-		   cout<<"trk_it x:"<<t.getX0()<<endl;
-		   cout<<"trk_it y:"<<t.getY0()<<endl;
-		 }
-	     }
-	 }
-       
-       //printf("%i, %i, %i, %i\n",tr[3], tr[2], tr[102], tr[103]
-       //	      );
-       /*
-       N++;
-
-       if (tr[2] || tr[3])
-	 N_L_any++;
-       if ( (tr[2] || tr[3]) && !(tr[2] && tr[3]))
-	 N_L_one++;
-       if (tr[2] && tr[3])
-	 N_L_two++;
-
-       if (tr[102] || tr[103])
-	 N_R_any++;
-       if ( (tr[102] || tr[103]) && !(tr[102] && tr[103]))
-	 N_R_one++;
-       if (tr[102] && tr[103])
-	 N_R_two++;
-
-       bool track_both_arms = (tr[2] || tr[3]) && (tr[102] || tr[103]);
-       if (track_both_arms)
-	 N_LR++;
-       */
-
-       // get track data for horizontal RPs                                                                                                  
+                                                   
        TrackDataCollection trackData_raw;
        for (const auto &ds : *tracks)
 	 {
@@ -364,9 +312,9 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	     {
 	       if (rpId == 3 || rpId == 2 || rpId == 102 || rpId == 103){
 		 trackData_raw[rpId] = t;
-		 cout<<"I get raw track"<<endl;
-		 cout<<"x: "<<trackData_raw[rpId].x<<endl;
-		 cout<<"y: "<<trackData_raw[rpId].y<<endl;
+		 //cout<<"I get raw track"<<endl;
+		 //cout<<"x: "<<trackData_raw[rpId].x<<endl;
+		 //cout<<"y: "<<trackData_raw[rpId].y<<endl;
 		 (*rp_tracks_xraw_).push_back(trackData_raw[rpId].x);
 	       }
 	     }
@@ -394,43 +342,17 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
        // split track collection per arm                                                                                                     
        TrackDataCollection trackData_L, trackData_R;
-       int numL=0;int numR=0;
        for (const auto &p : trackData_al)
 	 {
-	   int arm = p.first / 100;
+	   //int arm = p.first / 100;
 	   TSpline3 *s_x_to_xi = m_s_x_to_xi[p.first];
 	   
 	   (*rp_tracks_x_).push_back(p.second.x);
 	   (*rp_tracks_y_).push_back(p.second.y);
 	   (*rp_tracks_detId_).push_back(p.first);
 	   (*rp_tracks_xi_).push_back(s_x_to_xi->Eval(p.second.x*1E-3));
-	   if (arm == 0 && numL > -1 ){
-	     trackData_L[p.first] = p.second;
-	     cout<<"I get a left track"<<endl;numL++;
-	     cout<<"DetId: "<<p.first<<endl;
-	     cout<<"x: "<<p.second.x<<endl;
-	     cout<<"y: "<<p.second.y<<endl;
-	     cout<<"Xi: "<<s_x_to_xi->Eval(p.second.x*1E-3)<<endl;
-	   }
-	   if (arm == 1 && numR > -1 ){
-	     cout<<"I get a right track"<<endl;
-	     cout<<"DetId: "<<p.first<<endl;
-	     cout<<"x: "<<p.second.x<<endl;
-	     cout<<"y: "<<p.second.y<<endl;
-	     cout<<"Xi: "<<s_x_to_xi->Eval(p.second.x*1E-3)<<endl;
-	     trackData_R[p.first] = p.second;//cout<<"I get a right track"<<endl;
-	     numR++;
-	   }
 	 }
 
-       /*
-       // run recontruction in each arm                                                                                                      
-       ProtonData proton_L = ReconstructProton(trackData_L, true);
-       ProtonData proton_R = ReconstructProton(trackData_R, false);
-
-       cout<<"Proton L xi(): "<<proton_L.xi<<endl;
-       cout<<"Proton R xi(): "<<proton_R.xi<<endl;
-       */
 
        edm::Handle< std::vector<reco::Vertex> > vtxs;
        iEvent.getByLabel("offlinePrimaryVertices", vtxs);
@@ -443,7 +365,6 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
        edm::Handle< std::vector<reco::Muon> > muonHandle;
        iEvent.getByLabel("muons",muonHandle);
-       //iEvent.getByToken(inputMuonToken_,muonHandle);     
        std::vector<reco::Muon>::const_iterator MuonIt ;
 
        // get RECO tracks from the event
@@ -472,15 +393,15 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	   (*muon_charge_).push_back(MuonIt->charge());
 	   (*muon_pt_).push_back(MuonIt->pt());
 	   (*muon_eta_).push_back(MuonIt->eta());
-	   cout<<"Pt: "<<MuonIt->pt()<<endl;
-	   cout<<"Vertex track size: "<<vtx->tracksSize()<<endl;
+	   //cout<<"Pt: "<<MuonIt->pt()<<endl;
+	   //cout<<"Vertex track size: "<<vtx->tracksSize()<<endl;
 	   *vertex_ntracks_ = vtx->tracksSize();
 	   *vertex_x_ = vtx->position().x();
 	   *vertex_y_ = vtx->position().y();
 	   *vertex_z_ = vtx->position().z();
 	   for(const auto at : t_tks){
 	     if(fabs(MuonIt->pt()-at.track().pt())<0.0001){
-	       cout<<"This is the correct track, pt: "<<MuonIt->pt()<<endl;
+	       //cout<<"This is the correct track, pt: "<<MuonIt->pt()<<endl;
 	       ttrkC.push_back(at);
 	     }
 	   }
@@ -494,91 +415,76 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        }//end of looking at muons
        if(numMuTight>1){
 	 TLorentzVector mumu = mu1+mu2;
-	 cout<<"Invariant mass: "<<mumu.M()<<endl;
-	 cout<<"Rapidity: "<<mumu.Rapidity()<<endl;
+	 //cout<<"Invariant mass: "<<mumu.M()<<endl;
+	 //cout<<"Rapidity: "<<mumu.Rapidity()<<endl;
        }
 
-       AdaptiveVertexFitter fitter;
-       TransientVertex myVertex = fitter.vertex(ttrkC);
-       *fvertex_x_=myVertex.position().x();
-       *fvertex_y_=myVertex.position().y();
-       *fvertex_z_=myVertex.position().z();
-       *fvertex_chi2ndof_=myVertex.normalisedChiSquared();
-       cout<<"Position: "<<myVertex.position().x()<<", "<<myVertex.position().y()<<", "<<myVertex.position().z()<<endl;
-       cout<<"Ndof: "<<myVertex.degreesOfFreedom()<<endl;
-       cout<<"Normalized ChiSquared: "<<myVertex.normalisedChiSquared()<<endl;
-       cout<<"ChiSquared: "<<myVertex.totalChiSquared()<<endl;
 
-       uint num_close_tracks=-1;
-       //for (ttrk_It=t_tks->begin();ttrk_It != t_tks->end(); ++ttrk_It){
-       for (uint i=0; i < t_tks.size();i++){
-	 cout<<"Track pt: "<<t_tks[i].track().pt()<<endl;
-	 cout<<"Track eta: "<<t_tks[i].track().eta()<<endl;
-	 TrajectoryStateClosestToPoint tS=t_tks[i].trajectoryStateClosestToPoint(myVertex.position());
-	 cout<<"Closest position on track: "<<tS.position().x()<<", "<<tS.position().y()<<", "<<tS.position().z()<<endl;
-	 //believe this is all in cm
-	 float closest_pos = sqrt( pow(myVertex.position().x()-tS.position().x(),2)+pow(myVertex.position().y()-tS.position().y(),2)+pow(myVertex.position().z()-tS.position().z(),2));
-	 cout<<"Closest position: "<<closest_pos<<endl;
-	 if(closest_pos<1){
-	   (*fvertex_tkdist_).push_back(closest_pos);
-	   (*fvertex_tkpt_).push_back(t_tks[i].track().pt());
-	   (*fvertex_tketa_).push_back(t_tks[i].track().eta());
+       if(ttrkC.size()>1){
+	 AdaptiveVertexFitter fitter;
+	 TransientVertex myVertex = fitter.vertex(ttrkC);
+	 *fvertex_x_=myVertex.position().x();
+	 *fvertex_y_=myVertex.position().y();
+	 *fvertex_z_=myVertex.position().z();
+	 *fvertex_chi2ndof_=myVertex.normalisedChiSquared();
+	 //cout<<"Position: "<<myVertex.position().x()<<", "<<myVertex.position().y()<<", "<<myVertex.position().z()<<endl;
+	 //cout<<"Ndof: "<<myVertex.degreesOfFreedom()<<endl;
+	 //cout<<"Normalized ChiSquared: "<<myVertex.normalisedChiSquared()<<endl;
+	 //cout<<"ChiSquared: "<<myVertex.totalChiSquared()<<endl;
+	 
+	 uint num_close_tracks=-1;
+	 //for (ttrk_It=t_tks->begin();ttrk_It != t_tks->end(); ++ttrk_It){
+	 for (uint i=0; i < t_tks.size();i++){
+	   //cout<<"Track pt: "<<t_tks[i].track().pt()<<endl;
+	   //cout<<"Track eta: "<<t_tks[i].track().eta()<<endl;
+	   TrajectoryStateClosestToPoint tS=t_tks[i].trajectoryStateClosestToPoint(myVertex.position());
+	   //cout<<"Closest position on track: "<<tS.position().x()<<", "<<tS.position().y()<<", "<<tS.position().z()<<endl;
+	   //believe this is all in cm
+	   float closest_pos = sqrt( pow(myVertex.position().x()-tS.position().x(),2)+pow(myVertex.position().y()-tS.position().y(),2)+pow(myVertex.position().z()-tS.position().z(),2));
+	   //cout<<"Closest position: "<<closest_pos<<endl;
+	   if(closest_pos<1){
+	     (*fvertex_tkdist_).push_back(closest_pos);
+	     (*fvertex_tkpt_).push_back(t_tks[i].track().pt());
+	     (*fvertex_tketa_).push_back(t_tks[i].track().eta());
+	   }
+	   if(closest_pos<0.2){
+	     num_close_tracks++;
+	   }
 	 }
-	 if(closest_pos<0.2){
-	   num_close_tracks++;
-	 }
+	 *fvertex_ntracks_=num_close_tracks+1;
        }
-       *fvertex_ntracks_=num_close_tracks;
+       
+
+     
+     //}//end of looking at one specific event
+
+   
+       *run_ = iEvent.id().run();
+       *ev_ = iEvent.id().event();
+       *lumiblock_ = iEvent.luminosityBlock();
+       
+       tree_->Fill();
 
      }//end of looking at passing trigger
 
-   }//end of looking at one specific event
+     (*muon_pt_).clear();
+     (*muon_eta_).clear();
+     (*muon_px_).clear();
+     (*muon_py_).clear();
+     (*muon_pz_).clear();
+     (*muon_e_).clear();
+     (*muon_charge_).clear();
+     (*fvertex_tkdist_).clear();
+     (*fvertex_tkpt_).clear();
+     (*fvertex_tketa_).clear();
+     (*rp_tracks_xraw_).clear();
+     (*rp_tracks_y_).clear();
+     (*rp_tracks_x_).clear();
+     (*rp_tracks_xi_).clear();
+     (*rp_tracks_detId_).clear();
 
 
 
-
-
-
-
-   
-   *run_ = iEvent.id().run();
-   *ev_ = iEvent.id().event();
-   *lumiblock_ = iEvent.luminosityBlock();
-
-   tree_->Fill();
-   (*muon_pt_).clear();
-   (*muon_eta_).clear();
-   (*muon_px_).clear();
-   (*muon_py_).clear();
-   (*muon_pz_).clear();
-   (*muon_e_).clear();
-   (*muon_charge_).clear();
-   (*fvertex_tkdist_).clear();
-   (*fvertex_tkpt_).clear();
-   (*fvertex_tketa_).clear();
-   (*rp_tracks_xraw_).clear();
-   (*rp_tracks_y_).clear();
-   (*rp_tracks_x_).clear();
-   (*rp_tracks_xi_).clear();
-   (*rp_tracks_detId_).clear();
-
-
-   /*
-   *experimentType_ = iEvent.experimentType();
-   *bunchCrossing_ = iEvent.bunchCrossing();
-   *orbitNumber_ = iEvent.orbitNumber();
-   */
-   /*
-#ifdef THIS_IS_AN_EVENT_EXAMPLE
-   Handle<ExampleData> pIn;
-   iEvent.getByLabel("example",pIn);
-#endif
-   
-#ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
-   ESHandle<SetupData> pSetup;
-   iSetup.get<SetupRecord>().get(pSetup);
-#endif
-   */
 }
 
 
