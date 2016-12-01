@@ -58,6 +58,18 @@
 #include "DataFormats/TotemDigi/interface/TotemVFATStatus.h"
 #include "DataFormats/TotemRPDetId/interface/TotemRPDetId.h"
 
+//For Conversions
+//#include "DataFormats/EgammaCandidates/interface/ConversionFwd.h"
+//#include "DataFormats/EgammaCandidates/interface/Conversion.h"
+//#include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
+
+//For electrons
+//#include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
+//#include "DataFormats/PatCandidates/interface/Electron.h"
+
+//For electron id
+//#include "DataFormats/Common/interface/ValueMap.h"
+//#include "DataFormats/PatCandidates/interface/VIDCutFlowResult.h"
 
 #include "shared_track.h"
 #include "shared_alignment.h"
@@ -92,6 +104,12 @@ class Ntupler : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
       virtual void endJob() override;
   // ----------member data ---------------------------
+  
+  edm::FileInPath fp;
+  edm::FileInPath fp2;
+  string fp0;
+  string fp1;
+  AlignmentResultsCollection alignment;
   TTree * tree_;
   std::vector<float> * muon_pt_;
   std::vector<float> * muon_eta_;
@@ -127,6 +145,8 @@ class Ntupler : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
   uint * ev_;
   uint * lumiblock_;
 
+  float * mumu_mass_;
+  float * mumu_rapidity_;
 
 };
 
@@ -144,7 +164,9 @@ class Ntupler : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 Ntupler::Ntupler(const edm::ParameterSet& iConfig)
 
 {
+  
 
+  cout<<"I get to beginning of constructor"<<endl;
   //now do what ever initialization is needed
   usesResource("TFileService");
   consumes<reco::TrackCollection>(edm::InputTag("generalTracks"));
@@ -153,6 +175,27 @@ Ntupler::Ntupler(const edm::ParameterSet& iConfig)
   consumes< edm::DetSetVector<TotemRPLocalTrack> >(edm::InputTag("totemRPLocalTrackFitter"));
   consumes<edm::TriggerResults>(edm::InputTag("TriggerResults","","HLT"));
   //consumes<edm::TriggerResults>(edm::InputTag("TriggerResults"));
+
+  //consumes<reco::GsfElectronCollection >(iConfig.getParameter<edm::InputTag>("gedGsfElectrons"));
+  //consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleIdMap"));
+  //consumes<reco::ConversionCollection>(iConfig.getParameter<edm::InputTag>("allConversions"));
+  fp0 = iConfig.getParameter<string>("particleFile");
+  fp1 = iConfig.getParameter<string>("particleFile2");
+  //fp = iConfig.getParameter<edm::FileInPath>("particleFile");
+  //fp2 = iConfig.getParameter<edm::FileInPath>("particleFile2");
+  //cout<<"file path alignment: "<<fp.fullPath()<<endl;
+  //cout<<"file path optics: "<<fp.fullPath()<<endl;
+  //cout<<"Is local?: "<<fp.isLocal()<<endl;
+
+  InitReconstruction(fp1);
+  InitFillInfoCollection();
+
+  if (alignment.Load(fp0.c_str()) != 0)
+    {  
+      printf("ERROR: can't load alignment data.\n");
+    }
+
+
   muon_pt_ = new std::vector<float>;
   muon_eta_ = new std::vector<float>;
   muon_px_ = new std::vector<float>;
@@ -185,6 +228,9 @@ Ntupler::Ntupler(const edm::ParameterSet& iConfig)
   ev_ = new uint;
   run_ = new uint;
   lumiblock_ = new uint;
+
+  mumu_mass_ = new float;
+  mumu_rapidity_ = new float;
 
   edm::Service<TFileService> fs; 
   tree_=fs->make<TTree>("SlimmedNtuple","SlimmedNtuple");
@@ -219,6 +265,9 @@ Ntupler::Ntupler(const edm::ParameterSet& iConfig)
   tree_->Branch("run",run_,"run/i");
   tree_->Branch("event",ev_,"event/i");
   tree_->Branch("lumiblock",lumiblock_,"lumiblock/i");
+
+  tree_->Branch("mumu_mass",mumu_mass_,"mumu_mass/f");
+  tree_->Branch("mumu_rapidity",mumu_rapidity_,"mumu_rapidity/f");
 
 }
 
@@ -263,6 +312,8 @@ Ntupler::~Ntupler()
   delete ev_;
   delete lumiblock_;
 
+  delete mumu_mass_;
+  delete mumu_rapidity_;
 
 }
 
@@ -295,7 +346,7 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      }
  
      if(passTrigger){
-
+       //cout<<"I pass trigger"<<endl;
        map<unsigned int, bool> tr; 
        tr[2] = false;
        tr[3] = false;
@@ -320,16 +371,22 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	     }
 	 }
 
-       InitReconstruction();
-       InitFillInfoCollection();
+       //InitReconstruction(fp2.fullPath());
+       //InitReconstruction(fp1);
+       //InitFillInfoCollection();
 
        // apply alignment corrections                                                     
-       AlignmentResultsCollection alignment;
-       if (alignment.Load("/home/users/rebassoo/work/2016_11_14_FinnNtupler/CMSSW_8_1_0_pre8/src/SlimmedNtuple/Ntupler/python/alignment_collection.out") != 0)
-	 {
-	   printf("ERROR: can't load alignment data.\n");
-	   //return 10;
-	 }
+       //AlignmentResultsCollection alignment;
+       //if (alignment.Load("/home/users/rebassoo/work/2016_11_14_FinnNtupler/CMSSW_8_1_0_pre8/src/SlimmedNtuple/Ntupler/python/alignment_collection.out") != 0)
+       //if (alignment.Load("alignment_collection.out") != 0)
+       //       if (alignment.Load(fp.fullPath().c_str()) != 0)
+       //if (alignment.Load(fp0.c_str()) != 0)
+       // {  
+       //   printf("ERROR: can't load alignment data.\n");
+       // }
+       //else{
+       // printf("ERROR: can load alignment data.\n");
+       //}
                                                    
        const auto &fillInfo = fillInfoCollection.FindByRun(iEvent.id().run());
        const auto alignment_it = alignment.find(fillInfo.alignmentTag);
@@ -338,6 +395,9 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	   printf("ERROR: no alignment for tag '%s'.\n", fillInfo.alignmentTag.c_str());
 	   //return 1;
 	 }
+       //       else{
+       // printf("ERROR: alignment for tag '%s'.\n", fillInfo.alignmentTag.c_str());
+       //}
        TrackDataCollection trackData_al = alignment_it->second.Apply(trackData_raw);
 
        // split track collection per arm                                                                                                     
@@ -382,10 +442,14 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
        TLorentzVector mu1,mu2;
        int numMuTight=0;
+       reco::VertexRef vtx(vtxs, 0);
+       *vertex_ntracks_ = vtx->tracksSize();
+       *vertex_x_ = vtx->position().x();
+       *vertex_y_ = vtx->position().y();
+       *vertex_z_ = vtx->position().z();
        for (MuonIt = muonHandle->begin(); MuonIt != muonHandle->end(); ++MuonIt) {
-	 reco::VertexRef vtx(vtxs, 0);
 	 bool tightId = muon::isTightMuon(*MuonIt,*vtx);
-	 if(tightId){
+	 if(tightId&&MuonIt->pt()>20&&fabs(MuonIt->eta())<2.4){
 	   (*muon_px_).push_back(MuonIt->px());
 	   (*muon_py_).push_back(MuonIt->py());
 	   (*muon_pz_).push_back(MuonIt->pz());
@@ -395,12 +459,8 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	   (*muon_eta_).push_back(MuonIt->eta());
 	   //cout<<"Pt: "<<MuonIt->pt()<<endl;
 	   //cout<<"Vertex track size: "<<vtx->tracksSize()<<endl;
-	   *vertex_ntracks_ = vtx->tracksSize();
-	   *vertex_x_ = vtx->position().x();
-	   *vertex_y_ = vtx->position().y();
-	   *vertex_z_ = vtx->position().z();
 	   for(const auto at : t_tks){
-	     if(fabs(MuonIt->pt()-at.track().pt())<0.0001){
+	     if(fabs(MuonIt->pt()-at.track().pt())<0.001&&fabs(MuonIt->eta()-at.track().eta())<0.001&&fabs(MuonIt->phi()-at.track().phi())<0.001){
 	       //cout<<"This is the correct track, pt: "<<MuonIt->pt()<<endl;
 	       ttrkC.push_back(at);
 	     }
@@ -413,48 +473,96 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	   if(numMuTight>2){cout<<"There are more than 3 tight muons in the event"<<endl;}
 	 }//end of looking at tightId
        }//end of looking at muons
-       if(numMuTight>1){
+       if(numMuTight==2){
 	 TLorentzVector mumu = mu1+mu2;
+	 *mumu_mass_=mumu.M();
+	 *mumu_rapidity_=mumu.Rapidity();
 	 //cout<<"Invariant mass: "<<mumu.M()<<endl;
 	 //cout<<"Rapidity: "<<mumu.Rapidity()<<endl;
        }
 
 
+       /*
+       edm::Handle<edm::ValueMap<bool> > ele_id_decisions;
+       iEvent.getByToken(eleIdMapToken_ ,ele_id_decisions);
+       // Full cut flow info for one of the working points:
+       edm::Handle<edm::ValueMap<vid::CutFlowResult> > ele_id_cutflow_data;
+       iEvent.getByToken(eleIdFullInfoMapToken_,ele_id_cutflow_data);
+       */
+       /*
+       // beam spot                                                                                     
+       edm::Handle<reco::BeamSpot> beamspot_h;
+       //   iEvent.getByLabel(beamSpotInputTag_, beamspot_h);                                           
+       iEvent.getByLabel("offlineBeamSpot", beamspot_h);
+       const reco::BeamSpot &beamSpot = *(beamspot_h.product());
+
+       // conversions                                                                                   
+       edm::Handle<reco::ConversionCollection> conversions_h;
+       iEvent.getByLabel("allConversions", conversions_h);
+
+       //Electrons
+       edm::Handle<reco::GsfElectronCollection> els_h;
+       iEvent.getByLabel("gedGsfElectrons", els_h);
+       unsigned int n = els_h->size();
+       for(unsigned int i = 0; i < n; ++i) {
+	 reco::GsfElectronRef ele(els_h, i);
+
+	 bool passConvVeto = !ConversionTools::hasMatchedConversion(*el,conversions_h,beamSpot->position());
+
+	 bool isPassEleId = (*ele_id_decisions)[ele];
+
+	 vid::CutFlowResult fullCutFlowData = (*ele_id_cutflow_data)[ele];
+	 printf("\nDEBUG CutFlow, full info for cand with pt=%f:\n", ele->pt());
+	 printCutFlowResult(fullCutFlowData);
+
+       }
+       */
+
        if(ttrkC.size()>1){
 	 AdaptiveVertexFitter fitter;
 	 TransientVertex myVertex = fitter.vertex(ttrkC);
-	 *fvertex_x_=myVertex.position().x();
-	 *fvertex_y_=myVertex.position().y();
-	 *fvertex_z_=myVertex.position().z();
-	 *fvertex_chi2ndof_=myVertex.normalisedChiSquared();
-	 //cout<<"Position: "<<myVertex.position().x()<<", "<<myVertex.position().y()<<", "<<myVertex.position().z()<<endl;
-	 //cout<<"Ndof: "<<myVertex.degreesOfFreedom()<<endl;
-	 //cout<<"Normalized ChiSquared: "<<myVertex.normalisedChiSquared()<<endl;
-	 //cout<<"ChiSquared: "<<myVertex.totalChiSquared()<<endl;
-	 
-	 uint num_close_tracks=-1;
-	 //for (ttrk_It=t_tks->begin();ttrk_It != t_tks->end(); ++ttrk_It){
-	 for (uint i=0; i < t_tks.size();i++){
-	   //cout<<"Track pt: "<<t_tks[i].track().pt()<<endl;
-	   //cout<<"Track eta: "<<t_tks[i].track().eta()<<endl;
-	   TrajectoryStateClosestToPoint tS=t_tks[i].trajectoryStateClosestToPoint(myVertex.position());
-	   //cout<<"Closest position on track: "<<tS.position().x()<<", "<<tS.position().y()<<", "<<tS.position().z()<<endl;
-	   //believe this is all in cm
-	   float closest_pos = sqrt( pow(myVertex.position().x()-tS.position().x(),2)+pow(myVertex.position().y()-tS.position().y(),2)+pow(myVertex.position().z()-tS.position().z(),2));
-	   //cout<<"Closest position: "<<closest_pos<<endl;
-	   if(closest_pos<1){
-	     (*fvertex_tkdist_).push_back(closest_pos);
-	     (*fvertex_tkpt_).push_back(t_tks[i].track().pt());
-	     (*fvertex_tketa_).push_back(t_tks[i].track().eta());
-	   }
-	   if(closest_pos<0.2){
-	     num_close_tracks++;
-	   }
+	 if(myVertex.isValid()){
+	   *fvertex_x_=myVertex.position().x();
+	   *fvertex_y_=myVertex.position().y();
+	   *fvertex_z_=myVertex.position().z();
+	   *fvertex_chi2ndof_=myVertex.normalisedChiSquared();
+	   //cout<<"Position: "<<myVertex.position().x()<<", "<<myVertex.position().y()<<", "<<myVertex.position().z()<<endl;
+	   //cout<<"Ndof: "<<myVertex.degreesOfFreedom()<<endl;
+	   //cout<<"Normalized ChiSquared: "<<myVertex.normalisedChiSquared()<<endl;
+	   //cout<<"ChiSquared: "<<myVertex.totalChiSquared()<<endl;
+	   
+	   uint num_close_tracks=-1;
+	   //for (ttrk_It=t_tks->begin();ttrk_It != t_tks->end(); ++ttrk_It){
+	   for (uint i=0; i < t_tks.size();i++){
+	     //cout<<"Track pt: "<<t_tks[i].track().pt()<<endl;
+	     //cout<<"Track eta: "<<t_tks[i].track().eta()<<endl;
+	     TrajectoryStateClosestToPoint tS=t_tks[i].trajectoryStateClosestToPoint(myVertex.position());
+	     //cout<<"Closest position on track: "<<tS.position().x()<<", "<<tS.position().y()<<", "<<tS.position().z()<<endl;
+	     //believe this is all in cm
+	     if(tS.isValid()){
+	       float closest_pos = sqrt( pow(myVertex.position().x()-tS.position().x(),2)+pow(myVertex.position().y()-tS.position().y(),2)+pow(myVertex.position().z()-tS.position().z(),2));
+	       //cout<<"Closest position: "<<closest_pos<<endl;
+	       if(closest_pos<1){
+		 (*fvertex_tkdist_).push_back(closest_pos);
+		 (*fvertex_tkpt_).push_back(t_tks[i].track().pt());
+		 (*fvertex_tketa_).push_back(t_tks[i].track().eta());
+	       }//fill ntuple with tracks within 1 cm
+	       if(closest_pos<0.1){
+		 num_close_tracks++;
+	       }//end of counting tracks within 1 mm
+	     }//end of making sure Trajectory state is valid
+	     else{cout<<"TrajectoryStateClosestToPoint is not valid"<<endl;}
+	   }//end of looping over tracks
+	   *fvertex_ntracks_=num_close_tracks+1;
+	 }//end of requiring valid vertex
+	 else{cout<<"Fitted vertex is not valid"<<endl;
+	   *fvertex_x_=-999.;
+	   *fvertex_y_=-999.;
+	   *fvertex_z_=-999.;
+	   *fvertex_chi2ndof_=-999.;
+	   cout<<"Number tracks at dimuon vertex: "<<*vertex_ntracks_<<endl;
 	 }
-	 *fvertex_ntracks_=num_close_tracks+1;
-       }
-       
-
+       }//end of requirement of two tight muon tracks
      
      //}//end of looking at one specific event
 
