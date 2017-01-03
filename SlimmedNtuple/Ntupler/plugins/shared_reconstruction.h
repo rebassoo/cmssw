@@ -19,10 +19,11 @@ struct ProtonData
 
 map<unsigned int, TSpline3 *> m_s_x_to_xi;
 
-void InitReconstruction()
+void InitReconstruction(const string &fin)
 {
   //TFile *f_in = TFile::Open("/afs/cern.ch/work/j/jkaspar/analyses/ctpps/optics/optics.root");
-  TFile *f_in = TFile::Open("/home/users/rebassoo/work/2016_11_14_FinnNtupler/CMSSW_8_1_0_pre8/src/SlimmedNtuple/Ntupler/python/optics.root");
+  //TFile *f_in = TFile::Open("/home/users/rebassoo/work/2016_11_14_FinnNtupler/CMSSW_8_1_0_pre8/src/SlimmedNtuple/Ntupler/python/optics.root");
+  TFile *f_in = TFile::Open(fin.c_str(),"r");
 	if (!f_in)
 	{
 		printf("ERROR in InitReconstruction > Can't open input file.\n");
