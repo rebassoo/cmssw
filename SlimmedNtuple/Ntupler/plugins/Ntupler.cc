@@ -546,7 +546,7 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		 (*fvertex_tkdist_).push_back(closest_pos);
 		 (*fvertex_tkpt_).push_back(t_tks[i].track().pt());
 		 (*fvertex_tketa_).push_back(t_tks[i].track().eta());
-	       }//fill ntuple with tracks within 1 cm
+	       }//fill ntuple with tracks within 1 m
 	       if(closest_pos<0.1){
 		 num_close_tracks++;
 	       }//end of counting tracks within 1 mm
