@@ -123,7 +123,7 @@ class Ntupler : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
   float * vertex_x_;
   float * vertex_y_;
   float * vertex_z_;
-  float * vertex_nvtxs_;
+  uint * vertex_nvtxs_;
 
   float * fvertex_x_;
   float * fvertex_y_;
@@ -208,7 +208,7 @@ Ntupler::Ntupler(const edm::ParameterSet& iConfig)
   vertex_x_ = new float;
   vertex_y_ = new float;
   vertex_z_ = new float;
-  vertex_nvtxs_ = new float;
+  vertex_nvtxs_ = new uint;
 
   fvertex_x_ = new float;
   fvertex_y_ = new float;
