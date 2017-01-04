@@ -54,9 +54,9 @@
 #include "DataFormats/CTPPSReco/interface/TotemRPLocalTrack.h"
 #include "DataFormats/CTPPSReco/interface/TotemRPUVPattern.h"
 #include "DataFormats/CTPPSReco/interface/TotemRPCluster.h"
-#include "DataFormats/TotemDigi/interface/TotemRPDigi.h"
-#include "DataFormats/TotemDigi/interface/TotemVFATStatus.h"
-#include "DataFormats/TotemRPDetId/interface/TotemRPDetId.h"
+#include "DataFormats/CTPPSDigi/interface/TotemRPDigi.h"
+#include "DataFormats/CTPPSDigi/interface/TotemVFATStatus.h"
+#include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
 
 //For Conversions
 //#include "DataFormats/EgammaCandidates/interface/ConversionFwd.h"
