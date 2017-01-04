@@ -347,6 +347,8 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  
      if(passTrigger){
        //cout<<"I pass trigger"<<endl;
+
+       //////////////////Start of reconstruction of RP si strips////////////////////////////////
        map<unsigned int, bool> tr; 
        tr[2] = false;
        tr[3] = false;
@@ -370,23 +372,6 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	       }
 	     }
 	 }
-
-       //InitReconstruction(fp2.fullPath());
-       //InitReconstruction(fp1);
-       //InitFillInfoCollection();
-
-       // apply alignment corrections                                                     
-       //AlignmentResultsCollection alignment;
-       //if (alignment.Load("/home/users/rebassoo/work/2016_11_14_FinnNtupler/CMSSW_8_1_0_pre8/src/SlimmedNtuple/Ntupler/python/alignment_collection.out") != 0)
-       //if (alignment.Load("alignment_collection.out") != 0)
-       //       if (alignment.Load(fp.fullPath().c_str()) != 0)
-       //if (alignment.Load(fp0.c_str()) != 0)
-       // {  
-       //   printf("ERROR: can't load alignment data.\n");
-       // }
-       //else{
-       // printf("ERROR: can load alignment data.\n");
-       //}
                                                    
        const auto &fillInfo = fillInfoCollection.FindByRun(iEvent.id().run());
        const auto alignment_it = alignment.find(fillInfo.alignmentTag);
@@ -412,6 +397,7 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	   (*rp_tracks_detId_).push_back(p.first);
 	   (*rp_tracks_xi_).push_back(s_x_to_xi->Eval(p.second.x*1E-3));
 	 }
+       //////////////////End of reconstruction of RP si strips////////////////////////////////
 
 
        edm::Handle< std::vector<reco::Vertex> > vtxs;
