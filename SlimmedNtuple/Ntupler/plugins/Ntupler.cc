@@ -347,7 +347,7 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  
      if(passTrigger){
        //cout<<"I pass trigger"<<endl;
-
+       /*
        //////////////////Start of reconstruction of RP si strips////////////////////////////////
        map<unsigned int, bool> tr; 
        tr[2] = false;
@@ -372,8 +372,10 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	       }
 	     }
 	 }
-                                                   
+
+       cout<<"I get here 3:"<<endl;                                                   
        const auto &fillInfo = fillInfoCollection.FindByRun(iEvent.id().run());
+       cout<<"I get here 4:"<<endl;                                                   
        const auto alignment_it = alignment.find(fillInfo.alignmentTag);
        if (alignment_it == alignment.end())
 	 {
@@ -398,7 +400,7 @@ Ntupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	   (*rp_tracks_xi_).push_back(s_x_to_xi->Eval(p.second.x*1E-3));
 	 }
        //////////////////End of reconstruction of RP si strips////////////////////////////////
-
+       */
 
        edm::Handle< std::vector<reco::Vertex> > vtxs;
        iEvent.getByLabel("offlinePrimaryVertices", vtxs);
